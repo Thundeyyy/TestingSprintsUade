@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 import json
 import os
 import re
@@ -230,6 +230,32 @@ def toggle_completada(indice):
     guardar_tareas(tareas)
     actualizar_lista_tareas()
 
+def calcular_estadisticas():
+    """Calcula las estadísticas de las tareas."""
+    total_tareas = len(tareas)
+    tareas_completadas = sum(1 for tarea in tareas if tarea['completada'])
+    tareas_pendientes = total_tareas - tareas_completadas
+    porcentaje = (tareas_completadas / total_tareas * 100) if total_tareas > 0 else 0
+    return {
+        'total': total_tareas,
+        'completadas': tareas_completadas,
+        'pendientes': tareas_pendientes,
+        'porcentaje': porcentaje
+    }
+
+def actualizar_estadisticas():
+    """Actualiza la visualización de las estadísticas."""
+    stats = calcular_estadisticas()
+    
+    # Actualizar etiquetas
+    label_total.config(text=f"Total de Tareas: {stats['total']}")
+    label_completadas.config(text=f"Tareas Completadas: {stats['completadas']}")
+    label_pendientes.config(text=f"Tareas Pendientes: {stats['pendientes']}")
+    label_porcentaje.config(text=f"Porcentaje de Avance: {stats['porcentaje']:.1f}%")
+    
+    # Actualizar barra de progreso
+    barra_progreso['value'] = stats['porcentaje']
+
 def actualizar_lista_tareas():
     """Actualiza la visualización de la lista de tareas."""
     for widget in frame_lista.winfo_children():
@@ -238,59 +264,61 @@ def actualizar_lista_tareas():
     if not tareas:
         label_vacio = tk.Label(frame_lista, text="No hay tareas creadas.", fg="gray")
         label_vacio.pack(pady=10)
-        return
-
-    for i, tarea in enumerate(tareas):
-        frame_tarea = tk.Frame(frame_lista)
-        frame_tarea.pack(fill=tk.X, padx=5, pady=2)
-        
-        # Checkbox para estado completado con símbolo ✓
-        var_check = tk.BooleanVar(value=tarea['completada'])
-        checkbox = tk.Checkbutton(frame_tarea, 
-                                variable=var_check,
-                                command=lambda idx=i: toggle_completada(idx),
-                                indicatoron=False,  # Esto permite usar texto en lugar del cuadro estándar
-                                width=2,
-                                text="✓" if tarea['completada'] else " ",
-                                selectcolor="#f0f0f0" if tarea['completada'] else "#e6f2ff")
-        checkbox.grid(row=0, column=0, padx=(0, 5))
-        
-        # Estilo del título según estado
-        estilo_titulo = {
-            'text': tarea['titulo'],
-            'anchor': "w",
-            'relief': "flat",
-            'cursor': "hand2"
-        }
-        
-        if tarea['completada']:
-            estilo_titulo.update({
-                'bg': '#f0f0f0',
-                'fg': 'gray'
-            })
-        else:
-            estilo_titulo.update({
-                'bg': '#e6f2ff',
-                'fg': 'black'
-            })
-        
-        # Botón con el título que muestra detalles
-        boton_titulo = tk.Button(frame_tarea, **estilo_titulo,
-                               command=lambda t=tarea: mostrar_detalles_tarea(t))
-        boton_titulo.grid(row=0, column=1, sticky="ew")
-        
-        # Botones de acción
-        frame_botones = tk.Frame(frame_tarea)
-        frame_botones.grid(row=0, column=2, padx=(5, 0))
-        
-        boton_editar = tk.Button(frame_botones, text="✏️", command=lambda idx=i: mostrar_formulario_editar(idx))
-        boton_editar.pack(side=tk.LEFT, padx=2)
-        
-        boton_eliminar = tk.Button(frame_botones, text="🗑️", command=lambda idx=i: confirmar_eliminar(idx))
-        boton_eliminar.pack(side=tk.LEFT, padx=2)
-        
-        # Configurar el grid para que el título ocupe el espacio disponible
-        frame_tarea.grid_columnconfigure(1, weight=1)
+    else:
+        for i, tarea in enumerate(tareas):
+            frame_tarea = tk.Frame(frame_lista)
+            frame_tarea.pack(fill=tk.X, padx=5, pady=2)
+            
+            # Checkbox para estado completado con símbolo ✓
+            var_check = tk.BooleanVar(value=tarea['completada'])
+            checkbox = tk.Checkbutton(frame_tarea, 
+                                    variable=var_check,
+                                    command=lambda idx=i: toggle_completada(idx),
+                                    indicatoron=False,
+                                    width=2,
+                                    text="✓" if tarea['completada'] else " ",
+                                    selectcolor="#f0f0f0" if tarea['completada'] else "#e6f2ff")
+            checkbox.grid(row=0, column=0, padx=(0, 5))
+            
+            # Estilo del título según estado
+            estilo_titulo = {
+                'text': tarea['titulo'],
+                'anchor': "w",
+                'relief': "flat",
+                'cursor': "hand2"
+            }
+            
+            if tarea['completada']:
+                estilo_titulo.update({
+                    'bg': '#f0f0f0',
+                    'fg': 'gray'
+                })
+            else:
+                estilo_titulo.update({
+                    'bg': '#e6f2ff',
+                    'fg': 'black'
+                })
+            
+            # Botón con el título que muestra detalles
+            boton_titulo = tk.Button(frame_tarea, **estilo_titulo,
+                                   command=lambda t=tarea: mostrar_detalles_tarea(t))
+            boton_titulo.grid(row=0, column=1, sticky="ew")
+            
+            # Botones de acción
+            frame_botones = tk.Frame(frame_tarea)
+            frame_botones.grid(row=0, column=2, padx=(5, 0))
+            
+            boton_editar = tk.Button(frame_botones, text="✏️", command=lambda idx=i: mostrar_formulario_editar(idx))
+            boton_editar.pack(side=tk.LEFT, padx=2)
+            
+            boton_eliminar = tk.Button(frame_botones, text="🗑️", command=lambda idx=i: confirmar_eliminar(idx))
+            boton_eliminar.pack(side=tk.LEFT, padx=2)
+            
+            # Configurar el grid para que el título ocupe el espacio disponible
+            frame_tarea.grid_columnconfigure(1, weight=1)
+    
+    # Actualizar estadísticas después de actualizar la lista
+    actualizar_estadisticas()
 
 def salir():
     """Cierra la ventana de la aplicación."""
@@ -299,12 +327,12 @@ def salir():
 # Ventana principal
 ventana = tk.Tk()
 ventana.title("Organizador de Tareas")
-ventana.geometry("550x500")
+ventana.geometry("550x600")  # Aumentado el alto para acomodar el panel de estadísticas
 ventana.configure(bg="#e6f2ff")
 
 # Configurar el grid de la ventana principal para que sea expansible
 ventana.grid_columnconfigure(0, weight=1)
-ventana.grid_rowconfigure(2, weight=1)
+ventana.grid_rowconfigure(3, weight=1)  # Cambiado a 3 para acomodar el panel de estadísticas
 
 # Datos de las tareas cargados desde el archivo
 tareas = cargar_tareas()
@@ -313,19 +341,40 @@ tareas = cargar_tareas()
 etiqueta_titulo_principal = tk.Label(ventana, text="Organizador de Tareas", font=("Arial", 18), bg="#e6f2ff")
 etiqueta_titulo_principal.grid(row=0, column=0, pady=10)
 
+# Frame para estadísticas
+frame_estadisticas = tk.Frame(ventana, bg="#e6f2ff", relief="solid", bd=1)
+frame_estadisticas.grid(row=1, column=0, pady=5, padx=10, sticky="ew")
+
+# Etiquetas para estadísticas
+label_total = tk.Label(frame_estadisticas, text="Total de Tareas: 0", bg="#e6f2ff")
+label_total.grid(row=0, column=0, padx=5, pady=2)
+
+label_completadas = tk.Label(frame_estadisticas, text="Tareas Completadas: 0", bg="#e6f2ff")
+label_completadas.grid(row=0, column=1, padx=5, pady=2)
+
+label_pendientes = tk.Label(frame_estadisticas, text="Tareas Pendientes: 0", bg="#e6f2ff")
+label_pendientes.grid(row=0, column=2, padx=5, pady=2)
+
+label_porcentaje = tk.Label(frame_estadisticas, text="Porcentaje de Avance: 0%", bg="#e6f2ff")
+label_porcentaje.grid(row=1, column=0, columnspan=3, padx=5, pady=2)
+
+# Barra de progreso
+barra_progreso = ttk.Progressbar(frame_estadisticas, length=300, mode='determinate')
+barra_progreso.grid(row=2, column=0, columnspan=3, padx=5, pady=5)
+
 boton_agregar_tarea = tk.Button(ventana, text="Agregar Tarea", command=mostrar_formulario_agregar)
-boton_agregar_tarea.grid(row=1, column=0, pady=10)
+boton_agregar_tarea.grid(row=2, column=0, pady=10)
 
 # Frame para contener la lista de tareas
 frame_lista = tk.Frame(ventana)
-frame_lista.grid(row=2, column=0, pady=10, padx=10, sticky="nsew")
+frame_lista.grid(row=3, column=0, pady=10, padx=10, sticky="nsew")
 frame_lista.grid_columnconfigure(0, weight=1)
 
-# Inicializar la lista de tareas al iniciar la aplicación
+# Inicializar la lista de tareas y estadísticas al iniciar la aplicación
 actualizar_lista_tareas()
 
 boton_salir = tk.Button(ventana, text="Salir", command=salir)
-boton_salir.grid(row=3, column=0, pady=20)
+boton_salir.grid(row=4, column=0, pady=20)
 
 # Iniciar aplicación
 ventana.mainloop()
